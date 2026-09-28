@@ -1,0 +1,67 @@
+{
+  "name": "flowdash-md-preview",
+  "version": "0.1.0",
+  "description": "A framework-agnostic Markdown preview renderer: render Markdown to HTML and mount a live, themeable preview panel anywhere.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
+  },
+  "keywords": [
+    "markdown",
+    "md",
+    "preview",
+    "renderer",
+    "markdown-it",
+    "live-preview",
+    "flowdash"
+  ],
+  "author": "xuze",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/xz333221/flowdash-md-preview.git"
+  },
+  "homepage": "https://github.com/xz333221/flowdash-md-preview#readme",
+  "bugs": {
+    "url": "https://github.com/xz333221/flowdash-md-preview/issues"
+  },
+  "dependencies": {
+    "@types/markdown-it": "^14.1.2",
+    "markdown-it": "^14.1.0"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

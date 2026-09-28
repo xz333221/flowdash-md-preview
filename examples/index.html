@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>flowdash-md-preview demo</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: system-ui, "Microsoft YaHei", sans-serif; height: 100vh; }
+      .app { display: grid; grid-template-columns: 1fr 1fr; height: 100%; }
+      .pane { min-width: 0; display: flex; flex-direction: column; }
+      .pane + .pane { border-left: 1px solid #d8dee4; }
+      textarea {
+        flex: 1; padding: 16px; border: 0; resize: none; outline: none;
+        font-family: ui-monospace, Consolas, monospace; font-size: 13px; line-height: 1.6;
+      }
+      #preview { flex: 1; padding: 16px; overflow: hidden; }
+      .bar { display: flex; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid #d8dee4; }
+      .bar button { padding: 4px 10px; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="pane">
+        <div class="bar"><strong>Markdown</strong></div>
+        <textarea id="editor"></textarea>
+      </div>
+      <div class="pane">
+        <div class="bar">
+          <strong>Preview</strong>
+          <button id="toggle-theme">切换亮/暗</button>
+        </div>
+        <div id="preview"></div>
+      </div>
+    </div>
+
+    <!--
+      先执行 `npm run build` 生成 dist/，再用浏览器打开本文件。
+      浏览器无法解析裸模块名，所以这里用 importmap 把 markdown-it 指到 CDN，
+      并把本地 dist 也映射进去。
+    -->
+    <script type="importmap">
+      {
+        "imports": {
+          "markdown-it": "https://esm.sh/markdown-it@14",
+          "../dist/": "../dist/"
+        }
+      }
+    </script>
+    <script type="module">
+      import { DARK_THEME, DEFAULT_THEME, createPreview } from '../dist/index.js'
+
+      const SAMPLE = `# flowdash-md-preview
+
+一个**框架无关**的 Markdown 预览渲染器。
+
+- 支持列表、表格、代码块
+- 默认 \`linkify\`，裸链接 https://example.com 会自动变成 a 标签
+
+\`\`\`ts
+import { createPreview } from 'flowdash-md-preview'
+const preview = createPreview('#preview')
+preview.update('# Hello')
+\`\`\`
+
+> 左边输入，右边实时刷新。
+
+| 选项 | 默认值 |
+| --- | --- |
+| \`breaks\` | \`true\` |
+| \`html\` | \`false\` |
+`
+
+      const editor = document.getElementById('editor')
+      const preview = createPreview('#preview', { initialValue: SAMPLE })
+      editor.value = SAMPLE
+
+      editor.addEventListener('input', () => preview.update(editor.value))
+
+      let dark = false
+      document.getElementById('toggle-theme').addEventListener('click', () => {
+        dark = !dark
+        preview.setTheme(dark ? DARK_THEME : DEFAULT_THEME)
+      })
+
+      // 便于在控制台里玩耍
+      window.preview = preview
+    </script>
+  </body>
+</html>
