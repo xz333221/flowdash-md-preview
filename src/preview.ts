@@ -1,5 +1,11 @@
 import { render } from './renderer'
-import { DEFAULT_CLASS, DEFAULT_THEME, THEME_ATTR } from './theme'
+import {
+  DEFAULT_CLASS,
+  DEFAULT_THEME,
+  PREVIEW_SCOPE_ATTR,
+  THEME_ATTR,
+  resolveTheme
+} from './theme'
 import type { PreviewInstance, PreviewOptions } from './types'
 
 function resolveElement(target: string | HTMLElement, doc: Document): HTMLElement {
@@ -33,7 +39,10 @@ export function createPreview(
 
   // 预览内容的实际容器：update() 只动这一层，不碰使用方自己的节点。
   const content = doc.createElement('div')
-  content.className = DEFAULT_CLASS
+  const customClass = typeof options.className === 'string' ? options.className.trim() : ''
+  content.className = [DEFAULT_CLASS, customClass].filter(Boolean).join(' ')
+  const scopeId = `preview-${Math.random().toString(36).slice(2, 10)}`
+  content.setAttribute(PREVIEW_SCOPE_ATTR, scopeId)
   if (options.scrollable !== false) {
     content.style.overflow = 'auto'
     content.style.height = '100%'
@@ -46,14 +55,24 @@ export function createPreview(
   let destroyed = false
 
   function setTheme(theme: string | false): void {
+    if (destroyed) return
     if (themeEl) {
       themeEl.remove()
       themeEl = null
     }
     if (theme === false) return
+    const preset = resolveTheme(theme)
+    const css = preset ?? theme
+    // 主题 CSS 只要引用了 .md-preview，就自动限制到当前实例，避免多个
+    // 预览面板最后注入的主题覆盖前一个面板。
+    const scope = `[${PREVIEW_SCOPE_ATTR}="${scopeId}"].${DEFAULT_CLASS}`
     themeEl = doc.createElement('style')
     themeEl.setAttribute(THEME_ATTR, '')
-    themeEl.textContent = theme
+    // 保留直接传入 DEFAULT_THEME / 自定义 CSS 时的旧行为；使用预设名称时
+    // 采用实例作用域，既兼容已有代码，也让主题选择器可以安全地多开面板。
+    themeEl.textContent = preset !== undefined && theme !== DEFAULT_THEME
+      ? css.split(`.${DEFAULT_CLASS}`).join(scope)
+      : css
     doc.head.appendChild(themeEl)
   }
 

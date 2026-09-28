@@ -23,10 +23,13 @@
   "sideEffects": false,
   "scripts": {
     "dev": "tsup --watch",
+    "demo": "npm run build && node examples/server.mjs",
+    "demo:server": "node examples/server.mjs",
     "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
+    "pack:check": "npm pack --dry-run",
     "prepublishOnly": "npm run typecheck && npm run test && npm run build"
   },
   "keywords": [
@@ -36,7 +39,10 @@
     "renderer",
     "markdown-it",
     "live-preview",
-    "flowdash"
+    "flowdash",
+    "gfm",
+    "table-of-contents",
+    "phycat"
   ],
   "author": "xuze",
   "license": "MIT",
@@ -49,10 +55,11 @@
     "url": "https://github.com/xz333221/flowdash-md-preview/issues"
   },
   "dependencies": {
-    "@types/markdown-it": "^14.1.2",
+    "highlight.js": "^11.12.0",
     "markdown-it": "^14.1.0"
   },
   "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
     "jsdom": "^25.0.1",
     "tsup": "^8.3.5",
     "typescript": "^5.6.3",

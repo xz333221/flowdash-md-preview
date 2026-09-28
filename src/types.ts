@@ -7,6 +7,26 @@
 export type MarkdownPluginFn = (md: any, ...args: any[]) => void
 export type MarkdownPlugin = MarkdownPluginFn | [MarkdownPluginFn, ...args: unknown[]]
 
+/** 根据标题文字、标题级别和从 0 开始的顺序生成锚点 ID。 */
+export type HeadingIdGenerator = (text: string, level: number, index: number) => string
+
+/** 代码块高亮回调；返回的字符串会原样作为 `<code>` 内容使用。 */
+export type HighlightCode = (code: string, language: string, attributes: string) => string
+
+/** 从 Markdown 中提取的目录条目。 */
+export interface Heading {
+  level: number
+  text: string
+  /** 标题锚点；显式关闭 headingId 且插件未设置 ID 时为空字符串。 */
+  id: string
+}
+
+/** 渲染后的 HTML 和按文档顺序排列的标题。 */
+export interface RenderResult {
+  html: string
+  headings: Heading[]
+}
+
 /** `render()` / `createPreview()` 共用的渲染配置。 */
 export interface RenderOptions {
   /**
@@ -26,6 +46,16 @@ export interface RenderOptions {
    * 传 `false` 表示不加任何包裹层，直接返回 markdown-it 的输出。
    */
   className?: string | false
+  /**
+   * 是否为标题生成唯一的锚点，或提供自定义 ID 生成函数。
+   * render/createRenderer 默认 false；renderWithMetadata 默认 true。
+   * 自动 ID 保留中文；同名标题自动添加 -2、-3 等后缀。
+   */
+  headingId?: boolean | HeadingIdGenerator
+  /** 是否把 GFM 任务列表（`- [ ] item`）渲染成不可编辑的复选框。默认 `true`。 */
+  taskLists?: boolean
+  /** 代码高亮回调，默认使用内置 highlight.js；也可接入 Shiki 等高亮器。 */
+  highlight?: HighlightCode
   /** 追加的 markdown-it 插件，按顺序 use。 */
   plugins?: MarkdownPlugin[]
   /** 透传给 `new MarkdownIt()` 的原始配置，优先级高于上面的快捷开关。 */

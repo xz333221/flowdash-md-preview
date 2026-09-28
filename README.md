@@ -2,10 +2,11 @@
 
 框架无关的 **Markdown 预览渲染器**。把 Markdown 渲染成 HTML，或者一步挂出一块可增量刷新的预览面板 —— 不绑定任何 UI 框架，浏览器、SSR、Node 都能用。
 
-- 🪶 只依赖 `markdown-it`，ESM / CJS / 类型声明齐全
+- 🪶 依赖 `markdown-it` 和 `highlight.js`，ESM / CJS / 类型声明齐全
 - 🧩 两层 API：纯渲染 `render()`，面板 `createPreview()`
-- 🎨 内置亮 / 暗两套主题，也可以完全接管样式
+- 🎨 内置 23 个主题预设，包含从 FlowDash 桌面端整理出的 PhyCat 配色
 - 🔒 默认关闭内联 HTML，避免把 `<script>` 直接渲染出来
+- ✅ 默认支持 GFM 任务列表和常见语言代码高亮，也可以接入自己的高亮器
 
 ## 安装
 
@@ -48,11 +49,21 @@ preview.destroy()
 ### 换主题
 
 ```ts
-import { DARK_THEME, createPreview } from 'flowdash-md-preview'
+import { createPreview } from 'flowdash-md-preview'
 
-createPreview('#preview', { theme: DARK_THEME }) // 内置暗色
+createPreview('#preview', { theme: 'github-dark' }) // 预设名称
+createPreview('#preview', { theme: 'phycat-forest' }) // FlowDash / PhyCat 森绿
 createPreview('#preview', { theme: '.md-preview { color: red }' }) // 自己的 CSS
 createPreview('#preview', { theme: false }) // 不注入任何样式
+```
+
+也可以导入完整 CSS，方便做自己的主题选择器：
+
+```ts
+import { THEME_PRESETS, THEMES } from 'flowdash-md-preview'
+
+createPreview('#preview', { theme: THEME_PRESETS.notion })
+Object.keys(THEMES) // github、github-dark、notion、phycat-forest ...
 ```
 
 ## API
@@ -68,6 +79,19 @@ createPreview('#preview', { theme: false }) // 不注入任何样式
 ### `createRenderer(options?) => MarkdownIt`
 
 拿到配置好的 markdown-it 实例，用于做深度定制。
+
+### `highlightCode(code, language, attributes) => string`
+
+内置的 highlight.js 高亮回调。默认渲染器会自动使用它；需要换成 Shiki 或自己的高亮方案时，传入 `highlight` 覆盖即可。
+
+### `renderWithMetadata(markdown, options?) => { html, headings }`
+
+渲染 HTML 的同时返回目录数据。这个 API 默认给标题生成中文友好的 `id`，同名标题会自动追加 `-2`、`-3`，适合做目录导航：
+
+```ts
+const { html, headings } = renderWithMetadata('# 快速开始\n## 安装')
+// headings: [{ level: 1, text: '快速开始', id: '快速开始' }, ...]
+```
 
 ### `createPreview(target, options?) => PreviewInstance`
 
@@ -91,10 +115,21 @@ createPreview('#preview', { theme: false }) // 不注入任何样式
 | `linkify` | `boolean` | `true` | 是否自动识别裸 URL / 邮箱 |
 | `typographer` | `boolean` | `false` | 是否开启排版美化 |
 | `className` | `string \| false` | `'md-preview'` | 顶层包裹 class，传 `false` 不包裹 |
+| `headingId` | `boolean \| function` | `false` | 是否自动生成标题锚点；`renderWithMetadata` 默认开启 |
+| `taskLists` | `boolean` | `true` | 把 `- [ ]` / `- [x]` 渲染成只读 checkbox |
+| `highlight` | `function` | 内置 highlight.js | 代码块高亮回调，返回 HTML |
 | `plugins` | `MarkdownPlugin[]` | `[]` | 追加的 markdown-it 插件 |
 | `markdownItOptions` | `object` | — | 直接透传给 `new MarkdownIt()`，优先级最高 |
 
 `PreviewOptions` 在此基础上多了 `theme`、`scrollable`、`initialValue`。
+
+`theme` 可以传 CSS 字符串、预设名称（例如 `'notion'`、`'phycat-vampire'`），或 `false`。通过预设名称切换时，样式会自动隔离到当前预览容器；字体采用系统字体，不会强制下载桌面端字体文件。
+
+预设包含 `github`、`github-dark`、`planet`、`notion`、`vuepress`、`docusaurus`、`bear`、`retro`、`latex`、`water-dark`、`sakura`、`sakura-dark`，以及 `phycat-forest`、`phycat-cherry`、`phycat-sky`、`phycat-sakura`、`phycat-mint`、`phycat-mauve`、`phycat-prussian`、`phycat-caramel`、`phycat-abyss`、`phycat-radiation`、`phycat-vampire`。
+
+### 主题来源
+
+PhyCat 预设参考了 FlowDash 桌面端的文档排版和 `typora-theme-phycat` 的配色方向，包内 CSS 是面向预览容器的独立实现，不携带桌面端字体或编辑器 UI 样式。
 
 ### 关于安全
 
@@ -117,13 +152,19 @@ src/
   index.ts      # 统一出口
   renderer.ts   # render / renderToElement / createRenderer
   preview.ts    # createPreview（面板 + 主题注入）
-  theme.ts      # DEFAULT_THEME / DARK_THEME
+  theme.ts      # 主题预设与 DEFAULT_THEME / DARK_THEME
   types.ts      # 公开类型
 test/           # vitest（jsdom 环境）
 examples/       # 手动体验用的静态页面
 ```
 
-看 demo：先 `npm run build`，再在浏览器打开 `examples/index.html`。
+看 demo：不要直接用 `file://` 打开 HTML（浏览器会拦截模块请求并报 CORS）。在项目根目录运行：
+
+```bash
+npm run demo
+```
+
+然后打开 <http://127.0.0.1:4173/examples/index.html>。如果已经完成构建，也可以只运行 `npm run demo:server`。
 
 ## 发布到 npm
 

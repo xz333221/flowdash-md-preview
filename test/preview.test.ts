@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { DEFAULT_THEME, THEME_ATTR, createPreview } from '../src/index'
+import { DEFAULT_THEME, THEME_ATTR, THEME_PRESETS, createPreview } from '../src/index'
 
 let host: HTMLDivElement
 
@@ -12,6 +12,13 @@ beforeEach(() => {
 })
 
 describe('createPreview()', () => {
+  it('导出完整的 23 个主题预设', () => {
+    expect(Object.keys(THEME_PRESETS)).toHaveLength(23)
+    expect(THEME_PRESETS['phycat-vampire']).toContain('.md-preview')
+    expect(THEME_PRESETS['phycat-sky']).toContain('.hljs-number')
+    expect(THEME_PRESETS['phycat-sky']).toContain('.hljs-title')
+  })
+
   it('挂载到选择器指向的节点并渲染初始内容', () => {
     const preview = createPreview('#preview', { initialValue: '# hello' })
     expect(preview.element).toBe(host)
@@ -38,6 +45,17 @@ describe('createPreview()', () => {
     expect(document.head.querySelector(`style[${THEME_ATTR}]`)?.textContent).toBe(
       '.md-preview{color:red}'
     )
+  })
+
+  it('支持主题预设名称，并为预设主题隔离实例作用域', () => {
+    const first = createPreview(host, { theme: 'phycat-forest' })
+    const secondHost = document.createElement('div')
+    document.body.appendChild(secondHost)
+    const second = createPreview(secondHost, { theme: 'phycat-abyss' })
+    const styles = Array.from(document.head.querySelectorAll(`style[${THEME_ATTR}]`), (style) => style.textContent ?? '')
+    expect(styles[0]).toContain(`[data-flowdash-md-preview="${first.content.dataset.flowdashMdPreview}"]`)
+    expect(styles[1]).toContain(`[data-flowdash-md-preview="${second.content.dataset.flowdashMdPreview}"]`)
+    expect(first.content.classList.contains('md-preview')).toBe(true)
   })
 
   it('内容没变化时不重建 DOM', () => {

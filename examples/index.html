@@ -14,9 +14,12 @@
         flex: 1; padding: 16px; border: 0; resize: none; outline: none;
         font-family: ui-monospace, Consolas, monospace; font-size: 13px; line-height: 1.6;
       }
-      #preview { flex: 1; padding: 16px; overflow: hidden; }
+      #preview { flex: 1; padding: 0; overflow: hidden; }
       .bar { display: flex; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid #d8dee4; }
       .bar button { padding: 4px 10px; cursor: pointer; }
+      .outline { display: flex; gap: 6px; flex-wrap: wrap; padding: 6px 12px; border-bottom: 1px solid #d8dee4; background: #fafbfc; }
+      .outline a { color: #57606a; font-size: 12px; text-decoration: none; }
+      .outline a:hover { color: #0969da; text-decoration: underline; }
     </style>
   </head>
   <body>
@@ -28,8 +31,39 @@
       <div class="pane">
         <div class="bar">
           <strong>Preview</strong>
-          <button id="toggle-theme">切换亮/暗</button>
+          <label>主题
+            <select id="theme">
+              <optgroup label="基础主题">
+                <option value="github">GitHub</option>
+                <option value="github-dark">GitHub 深色</option>
+                <option value="planet">Planet</option>
+                <option value="notion">Notion</option>
+                <option value="vuepress">VuePress</option>
+                <option value="docusaurus">Docusaurus</option>
+                <option value="bear">Bear</option>
+                <option value="retro">Retro</option>
+                <option value="latex">LaTeX</option>
+                <option value="water-dark">Water 深色</option>
+                <option value="sakura">Sakura</option>
+                <option value="sakura-dark">Sakura 深色</option>
+              </optgroup>
+              <optgroup label="PhyCat 主题">
+                <option value="phycat-forest">PhyCat 森绿</option>
+                <option value="phycat-cherry">PhyCat 樱桃</option>
+                <option value="phycat-sky">PhyCat 天蓝</option>
+                <option value="phycat-sakura">PhyCat 樱花</option>
+                <option value="phycat-mint">PhyCat 薄荷</option>
+                <option value="phycat-mauve">PhyCat 淡紫</option>
+                <option value="phycat-prussian">PhyCat 普鲁士</option>
+                <option value="phycat-caramel">PhyCat 焦糖</option>
+                <option value="phycat-abyss">PhyCat 深渊</option>
+                <option value="phycat-radiation">PhyCat 辐射</option>
+                <option value="phycat-vampire">PhyCat 吸血鬼</option>
+              </optgroup>
+            </select>
+          </label>
         </div>
+        <nav id="outline" class="outline" aria-label="文章目录"></nav>
         <div id="preview"></div>
       </div>
     </div>
@@ -48,13 +82,14 @@
       }
     </script>
     <script type="module">
-      import { DARK_THEME, DEFAULT_THEME, createPreview } from '../dist/index.js'
+      import { createPreview, renderWithMetadata } from '../dist/index.js'
 
       const SAMPLE = `# flowdash-md-preview
 
 一个**框架无关**的 Markdown 预览渲染器。
 
 - 支持列表、表格、代码块
+- 支持任务列表：- [x] 已完成
 - 默认 \`linkify\`，裸链接 https://example.com 会自动变成 a 标签
 
 \`\`\`ts
@@ -72,15 +107,27 @@ preview.update('# Hello')
 `
 
       const editor = document.getElementById('editor')
-      const preview = createPreview('#preview', { initialValue: SAMPLE })
+      const outline = document.getElementById('outline')
+      const preview = createPreview('#preview', { initialValue: SAMPLE, headingId: true })
       editor.value = SAMPLE
 
-      editor.addEventListener('input', () => preview.update(editor.value))
+      function refresh(value) {
+        preview.update(value)
+        const { headings } = renderWithMetadata(value, { headingId: true, className: false })
+        outline.replaceChildren(...headings.flatMap((heading, index) => {
+          const link = document.createElement('a')
+          link.href = `#${heading.id}`
+          link.style.marginLeft = `${(heading.level - 1) * 10}px`
+          link.textContent = heading.text
+          return index === 0 ? [link] : [document.createTextNode(' · '), link]
+        }))
+      }
 
-      let dark = false
-      document.getElementById('toggle-theme').addEventListener('click', () => {
-        dark = !dark
-        preview.setTheme(dark ? DARK_THEME : DEFAULT_THEME)
+      refresh(SAMPLE)
+      editor.addEventListener('input', () => refresh(editor.value))
+
+      document.getElementById('theme').addEventListener('change', (event) => {
+        preview.setTheme(event.target.value)
       })
 
       // 便于在控制台里玩耍
